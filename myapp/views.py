@@ -16,6 +16,7 @@ def index(request): # 약속이 있음 첫번째 파라미터를 요청과 관�
     for topic in topics :
         ol += f'<li><a href="/read/{topic["id"]}">{topic["title"]}</li>'
         # 이렇게 하면 링크가 생김.
+        # a href = ''를 하면 해당 위치 url에서 ''가 가리키는 새로운 링크를 만들 수 있나보다.
     # 이 for 문에 의해서 만들어진 코드
     return HttpResponse(f'''
     <html>
