@@ -1,0 +1,17 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render,HttpResponse
+
+import random
+
+# Create your views here.
+
+def index(request): # 약속이 있음 첫번째 파라미터를 요청과 관련된 여러 정보에 관한 객체를 전달하도록 약속
+    return HttpResponse("<h1>Welcome</h1>"+str(random.random())) # response로 http를 이용해서 응답을 하겠다는 의미로 이 객체를 쓰겠다.
+    # 또 그 인자로 전송하고 싶은 값을 적어주면 됨.
+
+def Create(request): # 약속이 있음 첫번째 파라미터를 요청과 관련된 여러 정보에 관한 객체를 전달하도록 약속
+    return HttpResponse("Create") 
+def read(request,id): # 약속이 있음 첫번째 파라미터를 요청과 관련된 여러 정보에 관한 객체를 전달하도록 약속
+    return HttpResponse("read" + id*2) 
