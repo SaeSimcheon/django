@@ -21,15 +21,15 @@ def HTMLTemplate(articleTag):
     return f'''
     <html>
     <body>
-        <h1>Django</h1>
-        <ol>
+        <h1><a href = '/'>Django</h1>
+        <ol> 
             {ol}
         </ol>
         {articleTag}
     </body>
     </html>
     '''
-
+# 데이터에 대한 변화가 없다면 반복문의 단 한 줄만 잘 고치면 전체 변화를 줄 수 있음.
 
 
 
