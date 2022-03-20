@@ -347,3 +347,147 @@ def vote(request,question_id):
     return HttpResponse(f"You're voting on question {question_id}")
 ```
 
+
+- 추가한 3개의 view를 위한 URL 연결.
+
+
+```python 
+#polls/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index,name = 'index')
+]
+```
+- 위 코드를 아래와 같이 작성.
+
+
+```python
+#polls/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index,name = 'index'),
+    path('<int:question_id>/', views.detail,name = 'detail'),
+    path('<int:question_id>/results/', views.results,name = 'results'),
+    path('<int:question_id>/vote/', views.vote,name = 'vote'),
+]
+
+
+- index 뷰와 다르게 특이한 모양을 보여줌. 각 URL에 있는 <>는 변수를 의미. 이 부분에 해당하는 값을 뷰에 인자로 전달.
+
+
+- 실제 동작되는 뷰를 만들기 위하여 index view를 수정.
+
+```python
+#polls/views.py
+
+from django.shortcuts import render
+from django.http import HttpResponse
+
+# Create your views here.
+
+def index(request):
+    
+    return HttpResponse("Hello, world. polls index")
+
+def detail(request,question_id):
+    return HttpResponse(f"You're loocking at question {question_id}")
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    return HttpResponse(f"You're voting on question {question_id}")
+
+```
+
+- 위 코드를 아래와 같이 수정.
+
+
+```
+#polls/views.py
+from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Question
+# Create your views here.
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    output = ', '.join([q.question_text for q in latest_question_list])
+    return HttpResponse(output)
+
+def detail(request,question_id):
+    return HttpResponse(f"You're loocking at question {question_id}")
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    return HttpResponse(f"You're voting on question {question_id}")
+```
+
+
+- 수정된 부분을 살펴보면 Question의 objects라는 attribute를 아마 order_by를 pub_date를 기준으로 하여 5개만 추출하는 것 같음.
+- 이를 list comprehension을 통하여 list로 만든 후 ', '으로 문자열을 합침. 
+- question_text는 아까 __str__ method를 통하여 지정했었음.
+```
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    output = ', '.join([q.question_text for q in latest_question_list])
+    return HttpResponse(output)
+
+```
+
+
+- 이런 식으로 수정하여 나타내면 됨.
+![image](https://user-images.githubusercontent.com/49121293/159179245-fa120715-0f55-4ec0-8d73-582a5e68c528.png)
+![image](https://user-images.githubusercontent.com/49121293/159179236-d8d98640-65c4-430d-b13e-c0071cdd5f11.png)
+
+
+
+##### 기능이 있는 뷰는 만들었지만, MTV 패턴에는 맞지 않다. 템플릿을 만들어 파이썬 코드와 HTML 코드를 분리.
+
+- 현재 polls 앱 디렉터리 안에 templates/polls 생성하기.
+
+```console
+mkdir templates
+cd templates/
+mkdir polls
+```
+
+- polls/templates/polls/index.html에 아래와 같이 작성하기
+- 아래는 공부할 것.
+- 일단 생각으로는 html 문서를 시작하는 방식으로 첫줄
+- 언어설정
+- head는 가장 위에 붙는 타이틀인 것 같고 문자열 셋은 utf-8 title을 지정
+- body는 본문 latest_question_list에 따라서 if else로 나뉘는 듯.
+- if 아래에는 반복문이 있고, /polls/.... 뒤에 오는 것을 question.id로 반는다 ? 
+- a 태그는 무엇이고 href는 무엇일까 ? 우리가 model로 지정한 question은 어떻게 연관될 수 있을까 ?
+- 
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>>
+</head>>
+<body>
+{% if latest_question_list %}
+    <ul>
+        {% for question in latest_question_list % }
+            <li><a href="/polls/{{question.id}}">{{question.question_text}} </a>>
+        {% endfor %}
+    </ul>>
+{% else %}
+    <p>No polls are available. </p>
+{% endif %}
+</body>>
+</html>>
+```
+
+
