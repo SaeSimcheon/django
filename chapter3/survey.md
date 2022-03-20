@@ -50,7 +50,7 @@ def index(request):
 
 - polls에 빈 코드 'urls.py'를 만든 후에 아래와 같이 작성한다.
 
-```
+```python
 # polls/urls.py
 from django.urls import path
 from . import views
@@ -326,7 +326,7 @@ def index(request):
 - 위 코드에서 아래와 같이 추가.
 
 
-```
+```python
 # polls/views.py
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -408,7 +408,7 @@ def vote(request,question_id):
 - 위 코드를 아래와 같이 수정.
 
 
-```
+```python
 #polls/views.py
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -435,7 +435,7 @@ def vote(request,question_id):
 - 수정된 부분을 살펴보면 Question의 objects라는 attribute를 아마 order_by를 pub_date를 기준으로 하여 5개만 추출하는 것 같음.
 - 이를 list comprehension을 통하여 list로 만든 후 ', '으로 문자열을 합침. 
 - question_text는 아까 __str__ method를 통하여 지정했었음.
-```
+```python
 def index(request):
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
     output = ', '.join([q.question_text for q in latest_question_list])
@@ -495,7 +495,7 @@ mkdir polls
 
 - 만든 템플릿을 이용하도록 뷰를 변경. 템플릿을 불러오기 위해 loader를 임포트.
 
-```
+```python
 #polls/views.py
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -520,7 +520,7 @@ def vote(request,question_id):
 
 - 위 코드를 아래와 같이 변경
 
-```
+```python
 #polls/views.py
 from django.shortcuts import render
 from django.http import HttpResponse
