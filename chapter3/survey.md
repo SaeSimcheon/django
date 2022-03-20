@@ -243,3 +243,107 @@ class Choice(models.Model):
         return self.choice_text
 ```
 
+#### 관리자 페이지 확인
+
+- 관리자 계정 만들기
+
+```console
+python3 manage.py createsuperuser
+```
+
+- 서버 실행하기
+
+```console
+python3 manage.py runserver
+```
+- 127.0.0.1:8000/admin/으로 들어가서 로그인하면 아래와 같음.
+
+![image](https://user-images.githubusercontent.com/49121293/159177214-9f123710-5b8c-4cac-87f8-f810ccf96c35.png)
+
+- 계정과 그룹만 관리할 수 있음.
+
+
+- 관리자 페이지에서 Question model을 관리하려면 등록을 해야함. admin.py 파일에 입력.
+
+```python
+# polls/admin.py
+
+from django.contrib import admin
+
+# Register your models here.
+
+```
+- 위 코드에서 아래로
+
+```python
+# polls/admin.py
+
+from django.contrib import admin
+
+
+
+```
+
+
+![image](https://user-images.githubusercontent.com/49121293/159177645-79523235-a1e5-4fb6-a895-b7375e6dd8a5.png)
+
+
+- 등록하면 바로 확인할 수 있음.
+
+- Questions를 들어가서 투표 목록으로 들어가자.
+
+
+![image](https://user-images.githubusercontent.com/49121293/159177701-b4b282be-c986-4793-8cd8-58d5c6a05e55.png)
+
+- 아직 투표 등록을 하지 않았기 때문에 아무 것도 없음.
+
+
+![image](https://user-images.githubusercontent.com/49121293/159177868-b7fe2540-d0b8-4867-b4dc-445f2dc101bb.png)
+
+
+- ADD QUESTION 버튼을 클릭해서 등록 화면으로 이동하여 투표 제목 등록.
+
+
+#### 여러 가지 뷰 추가하기
+
+1. 투표 목록 : 등록된 투표의 목룍을 표시하고 상세 페이지로 이동하는 링크 제공
+2. 투표 상세 : 투표의 상세 항목을 보여줌.
+3. 투표 기능 : 선택한 답변을 반영.
+4. 투표 결과 : 선택한 답변을 반영 한 후 결과를 보여줌.
+
+```python
+# polls/views.py
+from django.shortcuts import render
+from django.http import HttpResponse
+
+# Create your views here.
+
+def index(request):
+    return HttpResponse("Hello, world. polls index")
+
+```
+
+- 위 코드에서 아래와 같이 추가.
+
+
+```
+# polls/views.py
+from django.shortcuts import render
+from django.http import HttpResponse
+
+# Create your views here.
+
+def index(request):
+    return HttpResponse("Hello, world. polls index")
+
+def detail(request,question_id):
+    return HttpResponse(f"You're loocking at question {question_id}")
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    return HttpResponse(f"You're voting on question {question_id}")
+```
+
