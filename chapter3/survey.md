@@ -543,3 +543,67 @@ def results(request,question_id):
 def vote(request,question_id):
     return HttpResponse(f"You're voting on question {question_id}")
 ```
+
+
+
+
+
+
+- loader를 사용해서 index.html을 불러오고 미리 만들어둔 투표 목록을 context라는 변수를 이용해 전달하는 방식이 불편하다고 함. 장고에는 이를 간소화해줄 수 있는 render라는 단축이 존재.
+
+
+```python
+#polls/views.py
+from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Question
+from django.template import loader
+# Create your views here.
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    template = loader.get_template('polls/index.html')
+    context = {
+        'latest_question_list' : latest_question_list
+    }
+    return HttpResponse(template.render(context,request))
+
+def detail(request,question_id):
+    return HttpResponse(f"You're loocking at question {question_id}")
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    return HttpResponse(f"You're voting on question {question_id}")
+```
+- 위 코드를 아래와 같이 변경
+- render 메서드는 request와 템플릿 이름 그리고 사전형 객체를 인자로 받음.
+
+
+```python
+#polls/views.py
+from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Question
+from django.template import loader
+# Create your views here.
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {
+        'latest_question_list' : latest_question_list
+    }
+    return render(request,'polls/index.html',context)
+
+def detail(request,question_id):
+    return HttpResponse(f"You're loocking at question {question_id}")
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    return HttpResponse(f"You're voting on question {question_id}")
+```
