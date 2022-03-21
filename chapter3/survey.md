@@ -838,3 +838,185 @@ urlpatterns = [
 
 #### 현재 결과
 ![image](https://user-images.githubusercontent.com/49121293/159296036-6528c2ea-71bf-443d-b550-f8151753e116.png)
+
+
+# choice_set은 model 안에 없었는데 어디서 나오는 걸까 ? 상속받은 속성이 아닐까 ?
+# HttpResponseRedirect는 HttpResponse와 어떻게 다를까 ?
+# reverse는 무엇인가 ?
+# 분명 question
+# selected_choice는 question의 인스턴스가 아닌가 본데 ?
+# 애초에 model 자체는 인스턴스화된 상태로 관리되는 것이 아니네.
+
+
+- views의 vote 함수 수정
+- 아래에서 보면 selected_choice에 question.choice_set이 pk가 request.POST["choice"]로 전달 받는 것이 확인 됨.
+'''
+def vote(request,question_id):
+    question = get_object_or_404(Question,pk=question_id)
+    try :
+        selected_choice = question.choice_set.get(pk = request.POST["choice"])
+    except (KeyError,Choice.DoesNotExist):
+        return render(request,'polls/detail.html',{
+            'question' :question,
+            'error_message' : "You didn't select a choice."
+        })
+    else:
+        selected_choice.votes +=1
+        selected_choice.save()
+        return HttpResponseRedirect(reverse('polls:results',args = (question,id,)))
+
+'''
+
+```python
+# polls/urls.py
+from django.shortcuts import get_object_or_404, render
+from django.http import Http404, HttpResponse,HttpResponseRedirect
+from .models import Question , Choice
+from django.template import loader
+from django.urls import reverse
+# Create your views here.
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {
+        'latest_question_list' : latest_question_list
+    }
+    return render(request,'polls/index.html',context)
+
+def detail(request,question_id):
+    try :
+        question = Question.objects.get(pk=question_id)
+    except Question.DoesNotExist:
+        raise get_object_or_404(Question,pk = question_id)
+    return render(request,'polls/detail.html',{'question':question})
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    question = get_object_or_404(Question,pk=question_id)
+    try :
+        selected_choice = question.choice_set.get(pk = request.POST["choice"])
+    except (KeyError,Choice.DoesNotExist):
+        return render(request,'polls/detail.html',{
+            'question' :question,
+            'error_message' : "You didn't select a choice."
+        })
+    else:
+        selected_choice.votes +=1
+        selected_choice.save()
+        return HttpResponseRedirect(reverse('polls:results',args = (question,id,)))
+```
+
+수정사항
+- request.POST[변수이름]을 통해 전달받은 변수들의 값들을 확인 할 수 있음. 항상 문자열이기 대문에 문자열이라는 사실을 기억하고 다뤄야함.
+- 전달받은 답변이 해당 투표 항목에 있는지 확인하고 없다면 다시 상세 페이지로 이동. 답변을 선택하지 않았다는 오류 메시지도 같이 전달.
+- 제대로 된 답변을 선택한 것이라면 해당 답변의 수룰 1 증가시키고 결과 화면으로 이동.
+
+
+- 결과를 출력하는 result 뷰도 변경.
+
+```python
+# polls/urls.py
+from django.shortcuts import get_object_or_404, render
+from django.http import Http404, HttpResponse,HttpResponseRedirect
+from .models import Question , Choice
+from django.template import loader
+from django.urls import reverse
+# Create your views here.
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {
+        'latest_question_list' : latest_question_list
+    }
+    return render(request,'polls/index.html',context)
+
+def detail(request,question_id):
+    try :
+        question = Question.objects.get(pk=question_id)
+    except Question.DoesNotExist:
+        raise get_object_or_404(Question,pk = question_id)
+    return render(request,'polls/detail.html',{'question':question})
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    question = get_object_or_404(Question,pk=question_id)
+    try :
+        selected_choice = question.choice_set.get(pk = request.POST["choice"])
+    except (KeyError,Choice.DoesNotExist):
+        return render(request,'polls/detail.html',{
+            'question' :question,
+            'error_message' : "You didn't select a choice."
+        })
+    else:
+        selected_choice.votes +=1
+        selected_choice.save()
+        return HttpResponseRedirect(reverse('polls:results',args = (question,id,)))
+
+
+```
+- 위 코드에서 result부분 수정.
+
+
+```python
+# polls/urls.py
+from django.shortcuts import get_object_or_404, render
+from django.http import Http404, HttpResponse,HttpResponseRedirect
+from .models import Question , Choice
+from django.template import loader
+from django.urls import reverse
+# Create your views here.
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {
+        'latest_question_list' : latest_question_list
+    }
+    return render(request,'polls/index.html',context)
+
+def detail(request,question_id):
+    try :
+        question = Question.objects.get(pk=question_id)
+    except Question.DoesNotExist:
+        raise get_object_or_404(Question,pk = question_id)
+    return render(request,'polls/detail.html',{'question':question})
+
+def results(request,question_id):
+    question = get_object_or_404(Question,pk = question_id)
+    return render(request , 'polls/results.html',{"question":question})
+
+def vote(request,question_id):
+    question = get_object_or_404(Question,pk=question_id)
+    try :
+        selected_choice = question.choice_set.get(pk = request.POST["choice"])
+    except (KeyError,Choice.DoesNotExist):
+        return render(request,'polls/detail.html',{
+            'question' :question,
+            'error_message' : "You didn't select a choice."
+        })
+    else:
+        selected_choice.votes +=1
+        selected_choice.save()
+        return HttpResponseRedirect(reverse('polls:results',args = (question,id,)))
+```
+
+- results.html도 만들어줌.
+
+```html
+<h1>{{question.question_text}} </h1>
+
+<ul>
+{% for choice in question.choice_set.all %}
+    <li>{{ choice.choice_text}} -- {{choice.votes}} vote{{choice.votes|pluralize}}</li>
+    {% endfor %}
+</ul>
+
+<a href = "{% url 'polls:detail' question.id %}"> Vote again ?</a>
+```
+- results.html 각 답변 항목과 투표 수를 한꺼번에 보여줌
+
