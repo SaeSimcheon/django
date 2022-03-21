@@ -607,3 +607,234 @@ def results(request,question_id):
 def vote(request,question_id):
     return HttpResponse(f"You're voting on question {question_id}")
 ```
+
+
+#### 404 오류 일으키기
+- 파일이 존재하지 않을때 발생하는 오류 -> 게시판 등 정보를 불러 오는 페이지의 경우 해당 데이터가 존재하지 않는다.
+
+
+- detail 뷰를 수정하기.
+
+
+```python
+from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Question
+from django.template import loader
+# Create your views here.
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {
+        'latest_question_list' : latest_question_list
+    }
+    return render(request,'polls/index.html',context)
+
+def detail(request,question_id):
+    return HttpResponse(f"You're loocking at question {question_id}")
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    return HttpResponse(f"You're voting on question {question_id}")
+```
+
+- 위 코드를 아래와 같이 수정
+
+
+```
+from django.shortcuts import get_object_or_404, render
+from django.http import Http404, HttpResponse
+from .models import Question
+from django.template import loader
+# Create your views here.
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {
+        'latest_question_list' : latest_question_list
+    }
+    return render(request,'polls/index.html',context)
+
+def detail(request,question_id):
+    try :
+        question = Question.objects.get(pk=question_id)
+    except Question.DoesNotExist:
+        raise get_object_or_404(Question,pk = question_id)
+    return render(request,'polls/detail.html',{'question':question})
+
+def results(request,question_id):
+    response = f"You're loocking at the results of question {question_id}"
+    return HttpResponse(response)
+
+def vote(request,question_id):
+    return HttpResponse(f"You're voting on question {question_id}")
+```
+
+- detail.html 파일을 만들고 body를 수정.
+
+- http404를 처리할 때 loader-render 관계처럼 단축 함수가 존재. -> get_object_or_404
+
+- context는 dict로 주어야한다.
+
+
+![image](https://user-images.githubusercontent.com/49121293/159272300-e0cf4919-9d78-45e1-8e05-da06183295ff.png)
+
+![image](https://user-images.githubusercontent.com/49121293/159273594-8802f908-aacb-4682-9ab6-98d2e3833951.png)
+
+
+- 없는 question_id에 대해서는 404오류 일어남.
+
+#### 하드 코딩된 URL 없애기
+
+- index.html 파일을 살펴보면 상세페이지로 이동하기 위한 링크의 주소가 하드 코딩 되어 있음.
+
+- #polls/templates/polls/index.html
+```html
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="/polls/{{question.id}}/">{{question.question_text}} </a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available. </p>
+{% endif %}
+</body>
+</html>
+```
+
+- href 속성의 값을 직접 써주는 경우 나중에 주소를 polls가 아닌 다른 형태로 바꾸려하면 html을 직접 다 열어서 수정해야한다는 불편함이 있음.그래서 템플릿 태그를 사용해서 하드 코딩된 URL을 없애기
+
+- polls/templates/polls/index.html
+```html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="{% url 'detail' question.id %}">{{question.question_text}} </a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available. </p>
+{% endif %}
+</body>
+</html>
+```
+- URL 템플릿 태그를 사용해 주소를 만들어 출력하는 방식. URL 템플릿 태그는 URL의 이름을 필수 인자 전달.
+- detail이라는 이름을 가진 URL 형식을 찾아서 URL을 만들어 출력. -> 해당 이름을 가진 URL은 urls.py 전체를 검색해서 찾음. (궁금한 점 : urls가 polls를 기준해서만 찾는건지 아니면 전체를 전부 찾는건지 아마 polls만 기준이 아닐까 ?)
+- 아래에서 detail을 찾으면 '<int:question_id>/'이고 이를 기준으로 question_id를 적용하여 링크 설정.
+'''
+urlpatterns = [
+    path('', views.index,name = 'index'),
+    path('<int:question_id>/', views.detail,name = 'detail'),
+    path('<int:question_id>/results/', views.results,name = 'results'),
+    path('<int:question_id>/vote/', views.vote,name = 'vote'),
+]
+'''
+
+- <li><a href="{% url 'detail' question.id %}">{{question.question_text}} </a></li> 이렇게 수정.
+
+#### URL 네임스페이스 설정.
+- 분리된 경로 만들기. 예를들면 detail이라는 주소 이름을 가진 뷰가 polls 및 다른 앱에 있는 경우. 장고는 어느 뷰의 URL을 만들지 알 수가 없음. 이런 경우 네임스페이스를 설정해 각각의 뷰가 어느 앱에 속하는 것인지 구분.
+
+
+```python
+# polls/urls.py
+
+from django.urls import path
+from . import views
+
+# 여기 추가
+app_name = "polls"
+
+urlpatterns = [
+    path('', views.index,name = 'index'),
+    path('<int:question_id>/', views.detail,name = 'detail'),
+    path('<int:question_id>/results/', views.results,name = 'results'),
+    path('<int:question_id>/vote/', views.vote,name = 'vote'),
+]
+
+```
+- 위와 같이 app_name이라는 변수를 추가하면 설정 끝. 템플릿에도 수정하여 사용하면 됨.
+
+#### 투표 기능 추가하기
+
+- detail.html 수정 및 vote view에도 기능을 추가.
+
+- polls/templates/polls
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>{{question.question_text}}</h1>
+    <ul>
+    {% for choice in question.choice_set.all%}
+    <li>{{choice.choice_text}}</li>
+    {% endfor %}
+    </ul>
+</body>
+</html>
+```
+
+- polls/templates/polls/detail.html을 아래와 같이 수정.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>{{question.question_text}}</h1>
+    {% if error_message %}<p><strong>{{error_message}}</strong></p>{%endif%}
+
+    <form action ="{% url 'polls:vote' question.id %}" method="post">
+    {% csrf_token %}
+    {% for choice in question.choice_set.all %}
+        <input type = "radio" name = "choice" id ="choice{{forloop.couter}}" value ="{{choice.id}}">
+        <label for="choice{{forloop.counter}}">{{choice.choice_text}}</label><br>
+        {% endfor %}
+        <input type = "submit" value="Vote">
+    </form>>
+</body>
+</html>
+```
+
+- 수정사항
+    - form 태그를 사용해서 사용자가 답변 항목을 선택하고 전달할 수 있도록
+    - 사용자가 선택한 항목의 번호를 vote 뷰를 전달하도록 action 속성에 vote URL이 출력되게 URL 템플릿 태그 사용.
+    - method 속성에 써 있는 post는 http 메서드 중 하나. 서버로 정보를 전달할 때 사용하는 일반적인 방법.
+    - forloop.counter는 템플릿 문법에서 제공하는 기능 중 하나로 반복문의 횟수 출력.
+    - 선택한 답변의 번호를 vote 뷰에 choice=번호 형대로 전달.
+    - csrf_token은 CSRF 공격을 막기 위한 수단 중 하나. -> 방금 서버로 들어온 요청이 사이트 내부에서 온 것이 맞는지 확인하는 용도
+    
+    
+- detail.html에서 만들어진 정보를 받을 vote 뷰를 수정
+
+#### 현재 결과
+![image](https://user-images.githubusercontent.com/49121293/159296036-6528c2ea-71bf-443d-b550-f8151753e116.png)
