@@ -1020,3 +1020,332 @@ def vote(request,question_id):
 ```
 - results.html 각 답변 항목과 투표 수를 한꺼번에 보여줌
 
+
+![image](https://user-images.githubusercontent.com/49121293/159311793-58793605-9fcc-4ba4-bb58-c241d8c2bf26.png)
+
+![image](https://user-images.githubusercontent.com/49121293/159311858-2cbb589e-a11a-4db6-b8fc-74d66ea63e08.png)
+
+
+![image](https://user-images.githubusercontent.com/49121293/159311898-73b986c6-31cc-446f-829c-4289cfa5dae3.png)
+
+
+- Vote again을 누르면 다시 돌아가짐
+
+#### 제네릭 뷰 사용하기
+- 장고에서 미리 준비한 뷰를 제네릭 뷰라고 함.
+
+- 아래와 같이 수정
+- 
+```python
+# polls/views.py
+
+from django.views import generic
+from .models import Question, Choice
+
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_question_list'
+    def get_queryset(self):
+        """Return the last five published questions."""
+        return Question.objects.order_by('-pub_date')[:5]
+
+class DetailView(generic.DeleteView):
+    model = Question
+    template_name = 'polls/detail.html'
+
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
+```
+
+- urls.py도 같이 수정해주어야함.
+
+
+```python
+# polls/urls.py
+from django.urls import path
+from . import views
+
+app_name = 'polls'
+
+
+urlpatterns = [
+    path('', views.IndexView.as_view(),name = 'index'),
+    path('<int:pk>/', views.DetailView.as_view(),name = 'detail'),
+    path('<int:pk>/results/', views.ResultsView.as_view(),name = 'results'),
+    path('<int:question_id>/vote/', views.vote,name = 'vote'),
+]
+```
+
+
+수정 사항
+- path 함수는 그대로.
+- route 패턴도 동일
+- route 패턴에 들어있는 패턴 이름과 view 인자 바뀜. 패턴 이름을 question_id에서 pk로 변경
+- 뷰 이름을 바꾸고 뒤에 추가 코드 붙임. 꼭 as_view()를 붙여주어야 함.
+
+
+#### 정적 파일 사용하기
+- css나 js 같은 파일 의미.
+- polls/static/polls에 파일 추가. (style.css)
+
+
+![image](https://user-images.githubusercontent.com/49121293/159330244-b881d683-8fd1-44d1-abf5-b0a180e5410d.png)
+
+
+```css
+body {
+    background: white url("images/background.png") no-repeat;
+    background-position: right bottom;
+}
+
+li a {
+    color: green;
+}
+```
+- index.html 파일도 수정해야함
+- polls/templates/polls
+
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}">
+</head>
+<body>
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="{% url 'polls:detail' question.id %}">{{question.question_text}} </a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available. </p>
+{% endif %}
+</body>
+</html>
+```
+
+#### 관리자 폼 커스터마이징
+- 기존에 관리자 페이지에서는 목록 화면에 투표 제목만 나타나 있고 답변 목록도 수정할 수 없음.
+- admin.py에서 ModelAdmin을 상속받는 클래스를 만들고 register에 두 번째 인자로 전달해야함.
+
+
+```python
+polls/admin.py
+from django.contrib import admin
+
+# Register your models here.
+
+from .models import Question
+
+#admin.site.register(Question)
+
+class QuestionAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (None, {'fields':['question_text']}),
+        ('Date information', {'fields':['pub_date']}),
+    ]
+
+admin.site.register(Question,QuestionAdmin)
+```
+
+- 이런 방식으로 수정.
+- fieldsets 변수를 이용해 입력/수정 화면에서 각 항목들을 그룹화하고 그룹의 이름까지 설정 가능.
+
+
+
+- 답변 항목도 같이 등록하고 수정할 수 있도록 추가하기
+
+
+```python
+polls/admin.py
+from django.contrib import admin
+
+# Register your models here.
+
+from .models import Question, Choice
+
+#admin.site.register(Question)
+
+
+class ChoiceInline(admin.StackedInline):
+    model = Choice
+    extra = 3
+
+class QuestionAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (None, {'fields':['question_text']}),
+        ('Date information', {'fields':['pub_date']}),
+    ]
+    inlines = [ChoiceInline]
+
+
+admin.site.register(Question,QuestionAdmin)
+```
+
+- 답변 항목도 같이 등록하고 수정할 수 있도록 추가함.
+- Choice 모델도 임포트함. Choice 모델을 위한 옵션 클래스 만드는데 StackedInline 클래스를 상속 받음.
+- 이 클래스를 QuestionAdmin 클래스의 inlines 클래스 변수에 추가함.
+
+#### 결과
+
+
+![image](https://user-images.githubusercontent.com/49121293/159334506-58d8ab6a-1e33-49de-89f1-966c0865978f.png)
+
+
+
+- 답변을 관리하는 형태를 바꿔서 좀더 효율적으로 사용하려고 ChoiceInline 클래스의 부모 클래스를 StackedInline이 아니라 TabularInline으로 변경.
+
+#### 결과
+
+![image](https://user-images.githubusercontent.com/49121293/159334929-27cc28e7-9b0d-4577-b1c4-3b537130ee52.png)
+
+
+- 이렇게 깔끔하게 바뀐 모습.
+
+#### 관리자 화면 목록 커스터마이징
+- 질문말고도 발행일 등 여러 항목이 나오고 다른 기능도 사용할 수 있도록 하나씩 변경.
+
+##### 수정전
+
+![image](https://user-images.githubusercontent.com/49121293/159335509-ed200900-5d0c-497e-ac94-4dc7a52ad7b2.png)
+
+
+- 목록에 보이는 항목을 변경하려면 list_display 클래스 변수를 추가해야함.
+- 변수의 값은 튜플로 출력하고 싶은 항목을 묶어서 설정.
+
+- 아래 같이 추가
+
+```python
+# polls/admin.py
+from django.contrib import admin
+
+# Register your models here.
+
+from .models import Question, Choice
+
+#admin.site.register(Question)
+
+
+class ChoiceInline(admin.TabularInline):
+    model = Choice
+    extra = 3
+
+'''
+class ChoiceInline(admin.StackedInline):
+    model = Choice
+    extra = 3
+'''
+class QuestionAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (None, {'fields':['question_text']}),
+        ('Date information', {'fields':['pub_date']}),
+    ]
+    list_display= ('question_text','pub_date','was_published_recently')
+    inlines = [ChoiceInline]
+
+
+
+
+admin.site.register(Question,QuestionAdmin)
+```
+
+
+
+
+#### 결과
+
+![image](https://user-images.githubusercontent.com/49121293/159336420-7e8e3c6c-5eb7-43d6-9017-c45db3823deb.png)
+
+
+
+- was_published_recently의 출력 모양을 변경하기 위해서 모델 코드 수정
+- models.py를 수정.
+
+
+```python
+# polls/models.py
+from django.db import models
+import datetime
+
+from django.utils import timezone
+
+# Create your models here.
+
+class Question(models.Model):
+    question_text = models.CharField(max_length=200)
+    pub_date = models.DateTimeField('date published')
+    
+    def __str__(self):
+        return self.question_text
+    def was_published_recently(self):
+        return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
+    
+    was_published_recently.admin_order_filed = 'pub_date'
+    was_published_recently.boolean = True
+    was_published_recently.short_description = 'published recently ?'
+    
+class Choice(models.Model):
+    question = models.ForeignKey(Question,on_delete = models.CASCADE)
+    choice_text = models.CharField(max_length=200)
+    votes = models.IntegerField(default=0)
+    def __str__(self):
+        return self.choice_text
+```
+
+- admin_order_field : 원칙적으로 임의의 메서드에 의한 값은 정렬이 불가능. 대신 다른 값을 기준으로 정렬할 수 있는데 이 기준 항목을 설정하흔 항목
+- boolean : 값이 불리언 형태 값인지 설정. True 설정하면 대신 아이콘
+- short_description : 항목의 헤더 이름을 설정함.
+
+
+#### 결과
+
+![image](https://user-images.githubusercontent.com/49121293/159338136-4178821a-9b36-4d18-934d-e95926bf2d4c.png)
+
+
+
+
+#### 관리자 페이지 검색 기능과 필터 기능 추가
+- 검색과 필터 기능은 QuestionAdmin 클래스에 list_filter,search_fields 클래스 변수를 추가하면 사용할 수 있음.
+
+```python
+# polls/admin.py
+from django.contrib import admin
+
+# Register your models here.
+
+from .models import Question, Choice
+
+#admin.site.register(Question)
+
+
+class ChoiceInline(admin.TabularInline):
+    model = Choice
+    extra = 3
+
+'''
+class ChoiceInline(admin.StackedInline):
+    model = Choice
+    extra = 3
+'''
+class QuestionAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (None, {'fields':['question_text']}),
+        ('Date information', {'fields':['pub_date']}),
+    ]
+    list_display= ('question_text','pub_date','was_published_recently')
+    inlines = [ChoiceInline]
+
+    list_filter = ['pub_date']
+    search_fields = ['question_text']
+
+
+
+
+admin.site.register(Question,QuestionAdmin)
+```
