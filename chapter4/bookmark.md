@@ -107,3 +107,73 @@ admin.site.register(Bookmark)
 # Q. 저건 뭘까 ? 아마 프라이머리 키 설정이 안 돼서 default 설정된 것 같음.
 
 ![image](https://user-images.githubusercontent.com/49121293/159508770-624f1593-33c3-4212-9ef8-57b05a376ccf.png)
+
+
+
+- 관리자 페이지를 통해서 예시로 몇 개 등록해보기
+
+![image](https://user-images.githubusercontent.com/49121293/159510282-41e57a4a-4bee-407b-9bb1-f8565ba76692.png)
+
+- 어떤 사이트인지 알아볼 수 없음. 목록에 보면 우리가 알아볼 수 있는 내용은 없고 북마크 모델의 오브젝트라는 내용과 번호만 반복됨.
+
+
+#### 모델에 __str__ 메서드 추가
+
+- __str__ 메서드의 기능은 클래스 오브젝트를 출력할 때 나타낼 내용을 결정하는 메서드.
+
+
+```python
+# bookmark/models.py
+
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.db import models
+
+# Create your models here.
+
+class Bookmark(models.Model):
+    site_name = models.CharField(max_length = 100)
+    url = models.URLField('Site URL')
+    def __str__(self):
+        return "이름 : "+self.site_name + ", 주소 :" + self.url
+
+```
+- 위처럼 선택하면 아래 같이 나옴.
+
+
+![image](https://user-images.githubusercontent.com/49121293/159512198-dbf8369a-d922-448b-8688-401b23f7103b.png)
+
+#### 목록 뷰 만들기
+
+- 관리자 페이지를 이용해 모델을 관리할 수 있지만 제대로 된 서비스를 만들기 위해서는 프론트에서 해당 기능을 사용할 수 있어야함.
+
+- 목록 뷰 만들기.
+
+
+```python
+# bookmark/views.py
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render
+from django.views.generic.list import ListView
+from .models import Bookmark
+# Create your views here.
+
+class BookmarkListView(ListView):
+    model = Bookmark
+
+```
+
+- 모든 뷰를 클래스 형 뷰로 만들기. 
+- 뷰에는 함수형 뷰와 클래스 형 뷰가 있음.
+- 클래스 형 뷰는 웹 프로그래밍에서 자주 사용하는 기능을 장고가 미리 준비 해두었고 가져다 쓰는 형태.
+- 북마크 앱은 전형적인 뷰들이 필요하기 때문에 클래스 형 뷰가 적절함.
+
+
+- ListView를 상속해 사용.
+- model을 설정해야주어야 하기 때문에 Bookmark 모델을 임포트 하고 클래스 안에 model = Bookmakr 라는 구문을 이용해 모델 설정.
+
+
+#### URL 연결하기 
