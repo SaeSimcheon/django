@@ -638,4 +638,102 @@ class Bookmark(models.Model):
 
 - get_absolute_url 메서드는 장고에서 사용하는 메서드. 보통은 객체의 상세 호마ㅕㄴ 주소를 반환하게 만듦.
 - 이대 사용하는 reverse 메서드는 URL 패턴의 이름과 추가 인자를 전달받아 URL을 생성하는 메서드.
-- 
+
+
+#### 북마크 삭제 기능 구현
+
+```python
+# bookmark/views.py
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from audioop import reverse
+
+from django.shortcuts import render
+from django.views.generic.list import ListView
+from .models import Bookmark
+# Create your views here.
+
+from django.views.generic.edit import CreateView,UpdateView,DeleteView
+from django.views.generic.detail import DetailView
+from django.urls import reverse_lazy
+
+class BookmarkListView(ListView):
+    model = Bookmark
+
+
+class BookmakrCreateView(CreateView):
+    model=Bookmark
+    fields = ['site_name','url']
+    success_url = reverse_lazy('list')
+    template_name_suffix = '_create'
+
+
+class BookmarkDetailView(DetailView):
+    model = Bookmark
+
+class BookmarkUpdateView(UpdateView):
+    model=Bookmark
+    fields = ['site_name','url']
+    
+    template_name_suffix = '_update'
+
+
+class BookmarkDeleteView(DeleteView):
+    model = Bookmark
+    sucess_url = reverse_lazy('list')
+```
+
+
+```
+# bookmark/urls.py
+from django.conf.urls import url
+from django.urls import path,include
+
+from .views import BookmarkListView,BookmakrCreateView,BookmarkDetailView,BookmarkUpdateView,BookmarkDeleteView
+
+urlpatterns = [
+    path('',BookmarkListView.as_view(),name = 'list'),
+    path('add/',BookmakrCreateView.as_view(),name = 'add'),
+    path('detail/<int:pk>/',BookmarkDetailView.as_view(),name = 'detail'),
+    path('update/<int:pk>/',BookmarkUpdateView.as_view(),name = 'update'),
+    path('delete/<int:pk>/',BookmarkDeleteView.as_view(),name = 'delete'),
+]
+```
+
+- 바로 템플릿을 만드는 것이 아니라 bookmakr_list.html에 Delete 버튼을 먼저 연결한 후에 템플릿을 만들도록 함.
+- href 속성에 URL 템플릿 태그를 사용해 delete 페이지의 URL을 출력함.
+
+- <td><a href="{% url 'delete' pk=bookmark.id %}" class = "btn btn-danger btn-sm">Delete</a></td> 이렇게 수정.
+
+![image](https://user-images.githubusercontent.com/49121293/159569154-adec0e3c-f9c5-4c42-a8dd-431eda256909.png)
+
+
+
+- 이대로 동작 시키면 템플릿이 없다는 에러를 일으킴.
+
+![image](https://user-images.githubusercontent.com/49121293/159569263-f0a769bd-12d5-4ca6-b32b-76b78d53832f.png)
+
+
+- 템플릿 이름이 특이함. 기존에 사용하던 모델명_xxx 형태이긴 하지만 뷰 이름만 써있는 것이 아님.
+
+- bookmakr/templates/bookmark/bookmark_confirm_delete.html
+
+```html
+<form action = "" method = "post">
+    {% csrf_token %}
+    <div class="alert alert-danger">Do you want to delete Bookmark "{{object}}"</div>
+    <input type="submit" value ='Delete' class = 'btn btn-danger'>
+</form>
+```
+
+- form 태그 안에는 무조건 csrf_token 함께 두기.
+- 삭제할 것인지 확인 메시지를 출력하고 확인 버튼을 함께 만들어두었음.
+
+
+![image](https://user-images.githubusercontent.com/49121293/159570419-52e12487-6d17-48c4-9395-a1124a428105.png)
+
+
+- 이런식으로 삭제 표시가 뜨고
+- ![image](https://user-images.githubusercontent.com/49121293/159570483-baad521e-6cfd-4a93-9490-219ac5ff95be.png)
+
+- 삭제 후에 list로 리다이렉트
