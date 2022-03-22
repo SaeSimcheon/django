@@ -505,3 +505,137 @@ urlpatterns = [
 
 # Q. 아마 pk는 내부적으로 고정된 이름인 것 같다.
 
+#### 북마크 수정 기능 구현
+- 추가 기능과 거의 동일
+- 제네릭 뷰를 사용해서 수정 뷰를 추가.
+
+
+- bookmark/views.py
+```python
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render
+from django.views.generic.list import ListView
+from .models import Bookmark
+# Create your views here.
+
+from django.views.generic.edit import CreateView,UpdateView
+from django.views.generic.detail import DetailView
+from django.urls import reverse_lazy
+
+class BookmarkListView(ListView):
+    model = Bookmark
+
+
+class BookmakrCreateView(CreateView):
+    model=Bookmark
+    fields = ['site_name','url']
+    success_url = reverse_lazy('list')
+    template_name_suffix = '_create'
+
+
+class BookmarkDetailView(DetailView):
+    model = Bookmark
+
+class BookmakrUpdateView(UpdateView):
+    model=Bookmark
+    fields = ['site_name','url']
+    template_name_suffix = '_update'
+
+```
+- UpdateView를 상속받도록 
+- 모델을 설정하고 입력받을 필드 목록 설정.
+- 템플릿 접미사 '_update'-> bookmakr_update.html이 템플릿이 됨.
+
+- url 설정.
+```python
+# bookmark/urls.py 
+from django.conf.urls import url
+from django.urls import path,include
+
+from .views import BookmarkListView,BookmakrCreateView,BookmarkDetailView,BookmakrUpdateView
+
+urlpatterns = [
+    path('',BookmarkListView.as_view(),name = 'list'),
+    path('add/',BookmakrCreateView.as_view(),name = 'add'),
+    path('detail/<int:pk>/',BookmarkDetailView.as_view(),name = 'detail'),
+    path('update/<int:pk>/',BookmakrUpdateView.as_view(),name = 'update'),
+]
+```
+- bookmark/templates/bookmark/bookmark_update.html
+```html
+<form action="" method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit" value="Update" class="btn btn-info btn-sm">
+</form>
+```
+
+- bookmark_list도 수정.
+
+```html
+<body>
+    <div class = "btn-group">
+        <a href="{% url 'add' %}" class = "btn btn-info">Add Bookmark</a>
+    </div>
+    <p></p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Site</th>
+                <th scope="col">URL</th>
+                <th scope="col">Modify</th>
+                <th scope="col">Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bookmark in object_list %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td><a href = "{% url 'detail' pk=bookmark.id %}">{{bookmark.site_name}}</a></td>
+                <td><a href="{{bookmark.url}}"target = "_blank">{{bookmark.url}}</a></td>
+                <td><a href="{%url 'update' pk=bookmark.id %}" class = "btn btn-success btn-sm">Modify</a></td>
+                <td><a href="#" class = "btn btn-danger btn-sm">Delete</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+```
+
+
+![image](https://user-images.githubusercontent.com/49121293/159564527-47e5568e-3a09-4c23-9098-b2d2c0cc5c95.png)
+
+
+- modify 적용해보면 이런 오류 남
+- 데이터베이스에 값은 잘 저장되었지만 수정을 마쳤는데 이동할 페이지가 없다는 뜻.
+
+
+##### 수정이 완료된 후 이동할 페이지는 뷰에 success_url이 설정되어 있거나 모델에 get_absolute_url이라는 메서드를 통해서 결정함.
+
+##### get_absolute_url을 만들어서 적용해보기.
+
+```python
+# bookmark/models.py
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.db import models
+from django.urls import reverse
+# Create your models here.
+
+class Bookmark(models.Model):
+    site_name = models.CharField(max_length = 100)
+    url = models.URLField('Site URL')
+    def __str__(self):
+        return "이름 : "+self.site_name + ", 주소 :" + self.url
+    def get_absolute_url(self):
+        return reverse('detail',args = [str(self.id)])
+
+```
+
+- get_absolute_url 메서드는 장고에서 사용하는 메서드. 보통은 객체의 상세 호마ㅕㄴ 주소를 반환하게 만듦.
+- 이대 사용하는 reverse 메서드는 URL 패턴의 이름과 추가 인자를 전달받아 URL을 생성하는 메서드.
+- 
