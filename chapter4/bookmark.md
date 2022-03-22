@@ -334,4 +334,171 @@ class BookmakrCreateView(CreateView):
 
 
 - 이건 CreateView의 기능을 알아야함.
+- form 태그는 html로부터 서버로 자료를 전달하기 위해 사용하는 코드.
+- 회원가입, 로그인, 글쓰기 등 다양한 기능에 사용.
+- action 메서드는 자료를 전달할 대상 페이지. 비워둘 경우 "현재 페이지"로 전달.
+- method는 HTTP 메서드 종류를 설정.
 
+- form 태그 안쪽에는 csrf_token 값이 있는데 이를 CSRF공격을 막기 위한 용도. 해커가 만들 외부 사이트에서 우리가 만든 사이트에 로그인 한 사용자 권한 으로 공격하는 것을 막기 위한 용도.
+- form.as_p는 클래스형 뷰의 옵션값으로 설정한 필드를 출력하는데 각 필드 폼 태그들을 P태그로 감싸 출력하는 코드.
+
+- 마지막으로 submit 버튼은 입력 완료를 위한 만들어 줌.
+
+
+
+- 127.0.0.1:8000/bookmark/add/ 주소로 접속하면 
+
+![image](https://user-images.githubusercontent.com/49121293/159552986-4d01a88f-9d21-4061-b9d2-a9a1a0e95b50.png)
+
+
+
+# Q. Site name Site URL로 내가 기입한적이 없는데 어떻게 저렇게 나오지 ??
+
+
+- Add Bookmark 링크가 동작하도록 만들기 위해서 bookmark_list.html 파일에 있는 Add Bookmark 링크의 href 속성을 변경.
+
+
+- bookmark/templates/bookmark/bookmark_list.html
+- <a href="{% url 'add' %}" class = "btn btn-info">Add Bookmark</a> 이렇게 수정.
+```html
+<body>
+    <div class = "btn-group">
+        <a href="{% url 'add' %}" class = "btn btn-info">Add Bookmark</a>
+    </div>
+    <p></p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Site</th>
+                <th scope="col">URL</th>
+                <th scope="col">Modify</th>
+                <th scope="col">Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bookmark in object_list %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td><a href = "#">{{bookmark.site_name}}</a></td>
+                <td><a href="{{bookmark.url}}"target = "_blank">{{bookmark.url}}</a></td>
+                <td><a href="#" class = "btn btn-sucess btn-sm">Modify</a></td>
+                <td><a href="#" class = "btn btn-danger btn-sm">Delete</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+```
+
+#### 북마크 확인 기능 구현
+
+- 추가 기능을 구현했으니 북마크의 확인 기능 구현.
+- 상세 페이지. 클래스형 뷰를 사용해 간단히 만들기.
+
+
+```python
+# bookmark/views.py
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render
+from django.views.generic.list import ListView
+from .models import Bookmark
+# Create your views here.
+
+from django.views.generic.edit import CreateView
+from django.views.generic.detail import DetailView
+from django.urls import reverse_lazy
+
+class BookmarkListView(ListView):
+    model = Bookmark
+
+
+class BookmakrCreateView(CreateView):
+    model=Bookmark
+    fields = ['site_name','url']
+    success_url = reverse_lazy('list')
+    template_name_suffix = '_create'
+
+
+class BookmarkDetailView(DetailView):
+    model = Bookmark
+
+```
+
+
+```python
+# bookmark/urls.py
+from django.conf.urls import url
+from django.urls import path,include
+
+from .views import BookmarkListView,BookmakrCreateView,BookmarkDetailView
+
+urlpatterns = [
+    path('',BookmarkListView.as_view(),name = 'list'),
+    path('add/',BookmakrCreateView.as_view(),name = 'add'),
+    path('detail/<int:pk>/',BookmarkDetailView.as_view(),name = 'detail'),
+]
+```
+
+- urls.py에 path를 추가하고 BookmarkDetailView를 연결.
+- URL 패턴은 다른 뷰들과 차이를 보임.
+##### - <int:pk> : 앞에는 int 타입을 나타냄(컨버터). 뒤쪽은 컨버터를 통해 반환받은 값 혹은 패턴에 일치하는 값의 변수명. 컨버터는 생략하거나 커스텀 컨버터를 만들어 넣을 수 있음.
+
+- str : 비어있지 않은 모든 문자와 매칭. 단 '/'는 제외. 컨버터를 설정하지 않을 경우 기본 컨버터
+- int : 0을 포함한 양의 정수
+- slug : 아스키 문자나 숫자, 하이픈, 언더스코어를 포함한 슬러그 문자열과 매칭
+- uuid : UUID와 매칭. 같은 페이지에 여러 URL이 연결되는 것을 막으려 사용.
+- path : 기존적으로 str와 같은 기능이나 '/'도 포함. URL의 부분이 아닌 전체에 대한 매칭을 하고 싶을 때 사용.
+
+
+- bookmark/templates/bookmark/bookmark_detail.html
+```html
+<body>
+{{object.site_name}}<br/>
+{{object.url}}
+</body>
+```
+
+- 확인 페이지는 북마크 하나의 정보만 출력.
+- 제네릭 뷰인 DetailView가 object라는 이름으로 북마크의 값을 전달.
+- object 변수를 이용해 값을 하나씩 출력.
+
+
+- bookmark/templates/bookmark/bookmark_list.html
+```html
+<body>
+    <div class = "btn-group">
+        <a href="{% url 'add' %}" class = "btn btn-info">Add Bookmark</a>
+    </div>
+    <p></p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Site</th>
+                <th scope="col">URL</th>
+                <th scope="col">Modify</th>
+                <th scope="col">Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bookmark in object_list %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td><a href = "{% url 'detail' pk=bookmark.id %}">{{bookmark.site_name}}</a></td>
+                <td><a href="{{bookmark.url}}"target = "_blank">{{bookmark.url}}</a></td>
+                <td><a href="#" class = "btn btn-sucess btn-sm">Modify</a></td>
+                <td><a href="#" class = "btn btn-danger btn-sm">Delete</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+```
+- 확인 뷰를 만들었으니 목록 화면에서 확인 뷰로 가는 링크를 연결.
+- href 속성 값을 URL 템플릿 태그를 사용하도록 변경.
+- 템플릿 태그에 pk 값을 같이 전달해 제대로된 URL이 만들어져 출력할 수 있도록함.
+
+# Q. id는 자동으로 생성되는 속성인가 ?
