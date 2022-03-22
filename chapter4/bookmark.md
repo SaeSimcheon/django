@@ -277,3 +277,61 @@ urlpatterns = [
 
 
 - 눌러보면 아직 전부 기능하지는 않음. 클릭해보면 url이 임시로 #으로 이동하는 것을 알 수 있음.
+
+
+
+#### 북마크 추가 기능 구현 (CREATE)
+
+- 북마크 추가를 위한 뷰를 클래스 뷰로 만듦. 제네릭 뷰인 CreateView를 상속받으면 손쉽게 만들 수 있음.
+
+
+
+```python
+# bookmark/view.py
+
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render
+from django.views.generic.list import ListView
+from .models import Bookmark
+# Create your views here.
+
+from django.views.generic.edit import CreateView
+from django.urls import reverse_lazy
+
+class BookmarkListView(ListView):
+    model = Bookmark
+
+
+class BookmakrCreateView(CreateView):
+    model=Bookmark
+    fields = ['site_name','url'] 
+    sucess_url = reverse_lazy('list') # 목록 페이지로 이동. (list 이름을 가진 url로 이동.)
+    template_name_suffix = '_create' # 템플릿 파일 사용 설정.
+```
+
+- 어던 모델의 입력을 받을 것인지 model 변수를 만들고 Bookmakr로 설정.
+- fields 변수는 어떤 필드들을 입력받을 것인지 설정.
+- success_url은 글쓰기를 완료하고 이동할 페이지.
+- 보통은 상세 페이지로 이동하지만 success_url의 사용법을 알기 위해 목록 페이지로 설정했음.
+- template_name_suffix는 사용할 템플릿의 접미사만 변경하는 설정값.
+- 기본으로 설정되어 있는 템플릿 이름들은 모델명_xxx 형태. CreateView와 UpdateView는 form이 접미사인데 이걸 변경해서 bookmark_create라는 이름의 템플릿 파일을 사용하도록 설정한 것.
+
+##### view가 response 하는 방법이라는 것을 알 것.
+##### 모델 지정 및 필드 설정, url 설정, template 이름 지정.
+
+
+- bookmark/templates/bookmark/bookmark_create.html
+
+```html
+<form action = "" method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit" value="add" class="btn btn-info btn-sm">
+</form>
+```
+
+
+- 이건 CreateView의 기능을 알아야함.
+
