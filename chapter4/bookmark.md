@@ -1121,3 +1121,44 @@ class BookmarkListView(ListView):
         {% endif %}
 {% endblock %}
 ```
+
+
+![image](https://user-images.githubusercontent.com/49121293/159753256-422a7194-1095-4ae1-a39b-3e01d0686c9e.png)
+
+
+- 이런식으로 페이징 기능이 생김.
+- 지금까지 부트스트랩을 온라인을 통해 css 파일과 js 파일을 불러와서 사용하는 방법을 배워봄.
+
+#### 정적 파일 이용하기
+
+##### 정적파일이란 ?
+- 로컬 서버에 있는 여러 가지 파일을 의미.
+- css나 js 파일일 수 있고 이미지 파일일 수 있음.
+- 정해진 위치 있음.
+- 각 앱 폴더 밑에 static 폴더를 보통 사용하고 별도 폴더를 사용하려면 settings.py 파일에 설정해야함.
+- 각 앱 폴더 아래에 static 폴더를 두는 방법은 살펴보았기 때문에 다른 방식.
+
+
+- 프로젝트 루트 static 폴더 만들기. 그리고 settings.py 파일을 열고 맨 아래의 STATICFILES_DIRS라는 변수 추가.
+
+
+![image](https://user-images.githubusercontent.com/49121293/159754084-09282dd8-3793-467d-aefe-7c46845af0f5.png)
+
+- config/settings.py
+```python
+STATICFILES_DIRS=[os.path.join(BASE_DIR,'static')]
+```
+#Q . STATIC_URL = '/static/' 이건 ? 아 일단 놔두나봄.
+
+- static/style.css
+```css
+body {width:100%;}
+```
+- base.html에서 이 파일을 불러서 사용할 수 있도록 코드 입력.
+- head 태그 안 쪽에 아래를 추가.
+```
+{% load static %}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+```
+
+
