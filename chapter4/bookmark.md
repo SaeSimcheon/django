@@ -1166,3 +1166,37 @@ body {width:100%;}
 
 - 150%로 width 값을 변경하면 반영되는 것을 확인 했음.
 - 
+
+
+#### 배포하기
+
+
+##### .gitignore
+- 데이터베이스 파일이나 비밀번호가 들어있는 파일 혹인 캐시 파일 등 업로드 하면 안되거나 굳이 필요 없는 파일 목록 작성.
+
+
+```
+*.pyc
+*-
+__pycache__
+db.sqlite3
+.DS_Store
+```
+
+- config/settings.py에 있는 옵션 변경해야함.
+
+```python
+#DEBUG = True
+
+DEBUG = FALSE
+
+#ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+```
+
+# Q. secret key는 그냥 노출 시켜도 됨 ?
+
+##### github에 source 코드 올려둠.
+
+##### 그 후에 pythonanywhere에 올려서 호스팅하는 절차대로 따라했음.
