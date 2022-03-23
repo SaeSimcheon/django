@@ -737,3 +737,345 @@ urlpatterns = [
 - ![image](https://user-images.githubusercontent.com/49121293/159570483-baad521e-6cfd-4a93-9490-219ac5ff95be.png)
 
 - 삭제 후에 list로 리다이렉트
+
+#### 템플릿 확장하기
+##### 템플릿 확장이라는 방법 : 기준이 되는 레이아웃 부분을 담은 템플릿을 별도로 만들어두고 기준 템플릿에 상속받아 사용하는 것처럼 재사용하는 방법.
+- Global Navigation Bar 등 일정하게 유지되는 인터페이스들.
+- 이전까지 구현한 HTML 템플릿들에 메뉴바를 반영한다면 각각을 수정해야함.
+- 만약 100개라면 시간이 아주 오래 걸릴 것.
+
+
+![image](https://user-images.githubusercontent.com/49121293/159722028-2e0b30ca-f97d-46dc-8735-dc6bf4829cdf.png)
+
+- templates 폴더 추가.
+- 이 폴더에 기준이 되는 base.html이라는 파일을 추가할 것.
+
+##### settings.py를 변경해 우리가 만든 폴더에 저장된 템플릿 파일을 사용할 수 있도록 변경해야함.
+
+- 우리가 만든 폴더를 템플릿 검색할때 살펴보라고 추가할 것.
+
+```python
+# config/settings.py
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR,"templates")], # 이렇게 등록
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+```
+- 템플릿 확장은 BLOCK을 기준으로 동작.
+- 기준 템플릿에는 다른 템플릿을 끼워넣을 공간을 block 태그를 사용해 만들어두고 하위 템플릿에서는 이 블록에
+- 끼워넣을 내용을 결정하여 내용을 채움.
+- 아래 html에는 두 개의 블록이 있음.
+- title이라는 블록은 브라우저 탭에 보이는 이름을 결정하는 title 태그에 내용을 끼워넣을 수 있도록 만들었고 
+- body 태그 안쪽에는  content라는 블록을 만들어서 하위 템플릿에서 출력하고자 하는 내용을 끼워넣도록 만들었음.
+- templates/base.html
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+    {% block content %}
+    
+    {% endblcok %}
+</body>
+</html>
+```
+
+
+##### 다른 템플릿 모두 수정하기
+- bookmark/templates/bookmark/bookmark_confirm_delete.html
+
+원본
+```html
+<form action = "" method = "post">
+    {% csrf_token %}
+    <div class="alert alert-danger">Do you want to delete Bookmark "{{object}}"</div>
+    <input type="submit" value ='Delete' class = 'btn btn-danger'>
+</form>
+```
+수정
+```html
+{% extends 'base.html' %}
+
+{% block title %} Confirm Delete {% endblock %}
+{% block content %}
+<form action = "" method = "post">
+    {% csrf_token %}
+    <div class="alert alert-danger">Do you want to delete Bookmark "{{object}}"</div>
+    <input type="submit" value ='Delete' class = 'btn btn-danger'>
+</form>
+{% endblock %}
+```
+
+- extend 선언을 해주고
+- base block으로 정의한 부분들을 bookmark_confirm_delete에서 block title, block content로 선언 해주면 내용이 추가 됨.
+- 나머지도 수정하기
+
+
+bookmark/templates/bookmark/bookmark_create.html
+
+수정전
+```html
+<form action = "" method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit" value="add" class="btn btn-info btn-sm">
+</form>
+```
+수정후
+```html
+{% extends 'base.html' %}
+{% block title %}
+Bookmark Add
+{% endblock %}
+{% block content %}
+<form action = "" method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit" value="add" class="btn btn-info btn-sm">
+</form>
+{% endblock %}
+```
+
+bookmark/templates/bookmark/bookmark_detail.html
+
+수정전
+```html
+<body>
+{{object.site_name}}<br/>
+{{object.url}}
+</body>
+```
+수정후
+```html
+{% extends 'base.html' %}
+
+{% block title %}Detail{% endblock %}
+
+{% block content %}
+<body>
+{{object.site_name}}<br/>
+{{object.url}}
+</body>
+{% endblock %}
+```
+
+
+bookmark/templates/bookmark/bookmark_list.html
+
+수정전
+```html
+<body>
+    <div class = "btn-group">
+        <a href="{% url 'add' %}" class = "btn btn-info">Add Bookmark</a>
+    </div>
+    <p></p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Site</th>
+                <th scope="col">URL</th>
+                <th scope="col">Modify</th>
+                <th scope="col">Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bookmark in object_list %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td><a href = "{% url 'detail' pk=bookmark.id %}">{{bookmark.site_name}}</a></td>
+                <td><a href="{{bookmark.url}}"target = "_blank">{{bookmark.url}}</a></td>
+                <td><a href="{%url 'update' pk=bookmark.id %}" class = "btn btn-success btn-sm">Modify</a></td>
+                <td><a href="{% url 'delete' pk=bookmark.id %}" class = "btn btn-danger btn-sm">Delete</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+```
+수정후
+```html
+{% extends 'base.html' %}
+
+{% block title %}
+Bookmakr List
+{% endblock %}
+
+{% block content %}
+<body>
+    <div class = "btn-group">
+        <a href="{% url 'add' %}" class = "btn btn-info">Add Bookmark</a>
+    </div>
+    <p></p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Site</th>
+                <th scope="col">URL</th>
+                <th scope="col">Modify</th>
+                <th scope="col">Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bookmark in object_list %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td><a href = "{% url 'detail' pk=bookmark.id %}">{{bookmark.site_name}}</a></td>
+                <td><a href="{{bookmark.url}}"target = "_blank">{{bookmark.url}}</a></td>
+                <td><a href="{%url 'update' pk=bookmark.id %}" class = "btn btn-success btn-sm">Modify</a></td>
+                <td><a href="{% url 'delete' pk=bookmark.id %}" class = "btn btn-danger btn-sm">Delete</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+{% endblock %}
+```
+
+bookmark/templates/bookmark/bookmark_update.html
+
+수정전
+```html
+<form action="" method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit" value="Update" class="btn btn-info btn-sm">
+</form>
+```
+수정후
+```html
+{% extends 'base.html' %}
+
+{% block title %}
+    Bookmakr Add
+{%% endblock %}
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit" value="Update" class="btn btn-info btn-sm">
+</form>
+{% endblock %}
+```
+
+#### 부트스트랩 적용하기
+
+- 디자인은 전혀 바뀐 것이 없는 것을 알 수 있음.
+- 템플릿을 분리하고 확장 했으므로 디자인 입혀보기
+
+[Bootstrap](https://getbootstrap.com/)
+- CSS 프레임워크 중에 한 종류
+- CSS의 다양한 기능들을 HTML 태그에 class 속성을 추가하는 것만으로도 페이지를 아름답게 꾸밀 수 있게 해줌.
+
+##### base.html 수정하기.
+- css 파일 하나와 js 파일까지 세 가지를 불러다 사용해야함.
+
+- templates/base.html 수정
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    
+
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    {% block content %}
+    
+    {% endblock %}
+</body>
+</html>
+```
+
+# - Q. javascript는 여기서 어떤 기능을 했는지 모르겠음.
+- 앞서서 class 속성을 잘 바꿔두었고, 이를 기준으로 css를 적용해 디자인을 입힌다고 함.
+
+
+##### base.html의 body 수정하여 메뉴바 만들기
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    
+
+</head>
+<body>
+    <div class = "container">
+        <nav class = "navbar navbar-expand-lg navbar-light bg-light">
+            <a class ="navbar-brand" href="#">Django Bookmark</a>
+            <button class="navbar-toggler" type ="button" data-toggle = "collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#"><span class="sr-only">(current)</span></a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <p></p>
+        <div class="row">
+            <div class="col">
+            {% block content %}
+            {% endblock %}
+
+            {% block pagination%}
+            {% endblock %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+```
+
+
+
+![image](https://user-images.githubusercontent.com/49121293/159746376-8ef7c4b7-b0a1-4689-b2bb-e7da8f65b704.png)
+
+#### 페이징 기능 만들기
+
+- 페이징 기능은 게시판 같은 서비스에서는 필수.
+- 함수형 뷰에서는 페이징 기능을 만들기 위해서는 여러 가지 일을 해야하지만 클래스형 뷰에서는 간단히 구현 가능.
+- 아래 같이 수정하고 북마크를 8개까지 추가
+
+```python
+# bookmark/views.py
+class BookmarkListView(ListView):
+    model = Bookmark
+    paginate_by = 6
+
+```
+
