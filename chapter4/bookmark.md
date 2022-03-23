@@ -1079,3 +1079,45 @@ class BookmarkListView(ListView):
 
 ```
 
+![image](https://user-images.githubusercontent.com/49121293/159749369-dc421a29-f89b-416d-9168-8baf8a2b4a93.png)
+
+
+
+- 여덟개로 추가했음에도 불구하고 6개만 나오면 동작 잘하고 있는 것.
+
+##### 목록 아래 쪽에 페이지 목록을 출력해서 페이징 기능을 사용할 수 있도록 만들기.
+
+- bookmakr_list.html 파일을 열고 제일 아래쪽에 다음의 코드 입력
+
+
+```html
+{% block pagination %}
+    {% if is_paginated %}
+        <ul class="pagination justify-content-center pagination-sm">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'list'%}?page={{ page_obj.previous_page_number }}" tabindex="-1">
+                        Previous
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for object in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == forloop.counter %} disabled {% endif %}">
+                    <a class="page-link" href="{{ request.path }}?page={{ forloop.counter }}">{{ forloop.counter }}</a>
+                </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'list'%}?page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+        {% endif %}
+{% endblock %}
+```
