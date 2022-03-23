@@ -1195,7 +1195,7 @@ ALLOWED_HOSTS = ['*']
 
 ```
 
-# Q. secret key는 그냥 노출 시켜도 됨 ?
+# Q. secret key는 그냥 노출 시켜도 됨 ? 안 된다는데... 책 github는 그냥 
 
 ##### github에 source 코드 올려둠.
 
