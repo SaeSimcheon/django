@@ -1161,4 +1161,8 @@ body {width:100%;}
     <link rel="stylesheet" href="{% static 'style.css' %}">
 ```
 
+![image](https://user-images.githubusercontent.com/49121293/159756390-9d86cede-8ee5-4d54-b894-4e7e5ba99b22.png)
 
+
+- 150%로 width 값을 변경하면 반영되는 것을 확인 했음.
+- 
