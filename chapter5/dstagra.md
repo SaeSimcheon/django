@@ -579,4 +579,66 @@ TEMPLATES = [
 - mehtod가 post일때만 사용 가능.
 
 - 사용할 수 있는 옵션 목록 
-    - application/x-www-from-urlencoded : 기본 옵션. 모든 문자열을 인코딩해 전달하며 특수문자는 ASCII HEX 값으로 변
+    - application/x-www-from-urlencoded : 기본 옵션. 모든 문자열을 인코딩해 전달하며 특수문자는 ASCII HEX 값으로 변환하고 띄어쓰기는 +로 변환.
+    - multipart/form-data : 파일 업로드 때 사용하는 옵션이며 데이터를 문자열로 인코딩하지 않고 전달.
+    - text/plain : 띄어쓰기만 +로 변환하고 특별한 인코딩 없이 전달.
+
+- 템플릿을 작성했으면 상단 메뉴바에 있는 Upload 버튼을 클릭해 화면을 확인하고 이미지를 업로드 해보기.
+- 아직 사진이 정상적으로 나오지는 않음.
+
+
+
+- detail 탬플릿 생성.
+```python
+# /home/saesimcheon/workspace/dstagram/photo/templates/photo/detail.html
+{% extends 'base.html' %}
+
+{% block title %}
+    {{object.text|truncatechars:100}}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-2"></div>
+        <div class="col-md-8 panel panel-default">
+            <p><img src="{{object.photo.url}}" style="width:100%;"></p>
+            <button type="button" class="btn btn-outline-primary btn-sm">
+                {{object.author.username}}
+            </button>
+            <p>{{object.text|linebreaksbr}}</p>
+
+            <a href="{% url 'photo:photo_delete' pk=object.id %}" class="btn btn-outline-danger btn-sm float-right">
+                Delete
+            </a>
+            <a href="{% url 'photo:photo_update' pk=object.id %}" class="btn btn-outline-success btn-sm float-right">
+                Update
+            </a>
+        </div>
+        <div class="col-md-2"></div>
+    </div>
+{% endblock %}
+```
+
+##### 여전히 이미지가 제대로 출력되지 않는데 이는 urls.py를 수정해야한다.
+
+```python
+# /home/saesimcheon/workspace/dstagram/config/urls.py
+from django.conf.urls import url
+from django.contrib import admin
+from django.urls import path,include
+
+from django.conf.urls.static import static
+from django.conf import settings
+
+urlpatterns = [
+    path('admin/',admin.site.urls),
+    path('',include('photo.urls')),
+]
+
+urlpatterns += static(settings.MEDIA_URL,document_root =settings.MEDIA_ROOT)
+
+```
+
+
+- static을 사용해서 MEDIA_URL에 해당하는 주소를 가진 요청에 대해서는 MEDIA_ROOT에서 찾아서 응답하도록 urlspatterns에 추가하는 구문. 이 구문은 디버그 모드가 True일 때만 동작함.
+- 코드가 정상적으로 동작하면 
