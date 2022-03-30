@@ -177,3 +177,377 @@ python3 manage.py migrate photo 0001
 
 
 ![image](https://user-images.githubusercontent.com/49121293/160739144-54fc6700-22fe-4d7f-b746-1ba9c83017c5.png)
+
+
+#### 관리자 사이트에 모델 등록
+
+- 관리자 사이트에 모델을 등록하면 모델을 관리하는 뷰를 만들기 전에도 모델을 테스트해볼 수 있음.
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/photo/admin.py
+from django.contrib import admin
+from .models import Photo
+# Register your models here.
+
+admin.site.register(Photo)
+
+
+```
+
+서버를 실행하여 관리자 페이지에서 사진 올려보기
+
+
+![image](https://user-images.githubusercontent.com/49121293/160740487-ae157d61-2b34-4244-b006-a9f2afcd6e2a.png)
+
+
+![image](https://user-images.githubusercontent.com/49121293/160740950-e5b77217-4f06-4469-9845-7e32ac1b9f8b.png)
+
+
+- 업로드된 파일은 phtos 폴더 밑에 업로드 년월일 순으로 폴더를 만들고 그 안에 저장되어 있는데 앱이 많이진 경우를 생각해보면 프로젝트 루트에 수많은 폴더가 생기게 되어 지저분해질 수 있음.
+- 파일들이 모이는 폴더를 따로 하나 만들어서 관리해보기.
+
+
+#### 업로드 폴더 관리
+
+- 각 앱에서 업로드 하는 파일들을 한 폴더를 중심으로 모으려면 settings.py에 MEDIA_ROOT라는 옵션을 설정해야함.
+
+
+```python
+/home/saesimcheon/workspace/dstagram/config/settings.py
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+```
+
+- MEDIA_ROOT의 값을 프로젝트 루트 밑에 media 폴더로 설정. 그러면 어떤 앱에서 업로드를 하더라도 media 폴더 밑에 각 앱별로 폴더를 만들고 파일을 업로드 하게 됨.
+- MEDIA_URL은 STATUC_URL처럼 파일을 브로우저로 서빙할 때 보여줄 가상의 URL.
+- 가상 URL은 여러 가지 편의도 있지만 보안을 위해서 필요한 기능.
+
+
+![image](https://user-images.githubusercontent.com/49121293/160742367-65d84298-5a5f-4c33-bc9b-7f2c914723e8.png)
+
+
+- 다시 파일을 올리고 폴더를 확인해보면
+
+![image](https://user-images.githubusercontent.com/49121293/160742415-f2664e05-78c4-4695-a1f3-efe3ecc4cf5a.png)
+
+- media 폴더가 생성된 것을 확인할 수 있음. photos 폴더는 제거 하기
+
+#### 관리자 페이지 커스터마이징
+
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/photo/admin.py
+from django.contrib import admin
+from .models import Photo
+# Register your models here.
+
+
+
+
+class PhotoAdmin(admin.ModelAdmin):
+    list_display = ["id","author","created","updated"]
+    raw_id_fields = ["author"]
+    list_filter = ['created','updated','author']
+    search_fields = ['text','created']
+    ordering = ['-updated','-created']
+
+admin.site.register(Photo,PhotoAdmin)
+
+```
+
+1. list_display : 목록에 보일 필드 설정. 모델의 필드를 선택하거나 별도 함수를 만들어 필드처럼 등록 가능.
+2. raw_id_fields : ForeignKey 필드의 경우 연결된 모델의 객체 목록을 출력하고 선택해야 하는데 목록이 너무 길 경우 불편해짐. 이런 경우 raw_id_fields로 설정하면 값을 써넣는 형태로 바뀌고 검색 기능을 사용해 선택할 수 있게 됨.
+3. list_filter : 필터 기능을 사용할 필드를 선택. 장고가 적절하게 필터 범위를 출력해줌.
+4. search_fields : 검색 기능을 통해 검색할 필드를 선택. ForeignKey 필드는 설정할 수 없음.
+5. ordering : 모델의 기본 정렬값이 아닌 관리자 사이트에서 기본으로 사용할 정렬 값을 설정.
+
+
+![image](https://user-images.githubusercontent.com/49121293/160745067-2a7edf05-7567-4833-8428-681f45cde24f.png)
+
+
+
+위처럼 변경됨.
+
+
+#### 뷰 만들기
+- 사진 목록, 업로드, 확인, 수정, 삭제 기능을 위한 뷰를 만들기.
+
+##### 목록 뷰 만들기
+- 함수 형뷰로 만들기 위해 photo_list라는 함수를 만듦.
+- 함수형 뷰는 기본 매개변수로 request를 설정. 클래스형 뷰와는 달리 모든 기능을 직접 처리.
+- 목록으로 출력할 사진 객체를 불러오기 위해 Photo 모델의 기본 매니저인 objects를 이용해 all메서드 호출.
+- 데이터베이스에 저장된 모든 사진을 불러옴.
+- 그리고 render 함수를 사용해서 list.html 템플릿을 랜더링함. 
+- photos라는 템플릿 변수를 같이 전달.
+
+```python
+# /home/saesimcheon/workspace/dstagram/photo/views.py
+from django.shortcuts import render
+from .models import Photo
+# Create your views here.
+
+def photo_list(request):
+    photos = Photo.objects.all()
+    return render(request,'photo/list.html',{'photos':photos})
+
+
+```
+##### 업로드 뷰 만들기
+- 제네릭 뷰를 사용.
+- 나머지도 미리 임포트
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/photo/views.py
+from re import template
+from django.shortcuts import render
+from .models import Photo
+from django.views.generic.edit import CreateView,DeleteView,UpdateView
+# Create your views here.
+from django.shortcuts import redirect
+def photo_list(request):
+    photos = Photo.objects.all()
+    return render(request,'photo/list.html',{'photos':photos})
+
+class PhotoUploadView(CreateView):
+    model = Photo
+    fields = ["photo",'text']
+    template_name = 'photo/upload.html'
+
+    def form_valid(self,form):
+        form.instance.author_id = self.request.user.id
+
+        if form.is_valid():
+            form.instance.save()
+            return redirect('/')
+        else:
+            return self.render_to_response({'form':form})
+```
+
+
+- PhotoUploadView에는 template_name이라는 클래스 변수. 실제 사용할 템플릿 설정. 
+- form_valid 메서드는 업로드를 끝낸 후 이동할 페이지를 호출하기 위해 사용하는 메서드.
+- 이 메서드를 오버라이드해서 작성자를 설정하는 기능을 추가함.
+- 작성자는 현재 로그인 한 사용자로 설정.
+- 작성자를 설정하고 valid 메서드를 이용해 입력된 값들을 검증.
+- 이상이 없다면 데이터베이스에 저장하고 redirect 메서드를 이용해 메인페이지로 이동.
+- 만약 이상이 있다면 작성된 내용을 그대로 작성 페이지에 표시함.
+
+```python
+from re import template
+from django.shortcuts import render
+from .models import Photo
+from django.views.generic.edit import CreateView,DeleteView,UpdateView
+# Create your views here.
+from django.shortcuts import redirect
+def photo_list(request):
+    photos = Photo.objects.all()
+    return render(request,'photo/list.html',{'photos':photos})
+
+class PhotoUploadView(CreateView):
+    model = Photo
+    fields = ["photo",'text']
+    template_name = 'photo/upload.html'
+
+    def form_valid(self,form):
+        form.instance.author_id = self.request.user.id
+
+        if form.is_valid():
+            form.instance.save()
+            return redirect('/')
+        else:
+            return self.render_to_response({'form':form})
+
+class PhotoDeleteView(DeleteView):
+    model = Photo
+    success_url = '/'
+    template_name = 'photo/delete.html'
+
+class PhotoUpdateView(UpdateView):
+    model = Photo
+    fields = ["photo",'text']
+    template_name = 'photo/update.html'
+```
+
+- 나머지 뷰들도 적절히 만들어 주기. '/'는 사이트 메인을 뜻함.
+- Detail 뷰는 나중에 따로 만들기
+
+#### URL 연결하기
+
+```python
+# /home/saesimcheon/workspace/dstagram/photo/urls.py
+from django.urls import path
+from django.views.generic.detail import DetailView
+from .views import *
+from .models import Photo
+
+app_name = 'photo'
+
+urlpatterns = [
+    path ('',photo_list,name='photo_list'),
+    path ('detail/<int:pk>/',DetailView.as_view(model = Photo,template_name = 'photo/detail.html'),name='photo_detail'),
+    path ('upload/',PhotoUploadView.as_view(),name='photo_upload'),
+    path ('delete/<int:pk>/',PhotoDeleteView.as_view(),name='photo_delete'),
+    path ('update/<int:pk>/',PhotoUpdateView.as_view(),name='photo_update'),
+]
+```
+
+- 함수형 뷰는 이름만 써주고 클래스형 뷰는 .as_view()
+
+##### 이번 장에서 작성한 urls.py에서는 챙겨봐야할 부분이 두가지.
+1. app_name 이라는 변수 : 네임스페이스로 사용되는 값.
+    - 템플릿에서 URL 템플릿 태그를 사용할 대 app_name 값이 설정되어 있다면 app_name:URL패턴 ㅣㅇ름 형태로 사용.
+2. 제네릭 뷰를 그대로 사용하는 인라인 뷰 : 제네릭 뷰인 DetailView는 views.py가 아닌 urls.py에서 인라인 코드로 작성할 수 있음. path 함수에 인수로 전달할때는 as_view 안에 클래스 변수들을 설정해 사용.
+
+
+##### 루트 urls.py에 앱의 urls.py를 연결해주기.
+
+
+- /home/saesimcheon/workspace/dstagram/templates/base.html
+```html
+
+<html lang = 'en'>
+<head>
+    <meta charset ="UTF-8">
+    <meta name="viewport" content="width=device-width",initial-scale=1,
+    shirink-to-fit="no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+
+    <title>Dstagram {% block title %}{% endblock %}</title>
+</head>    
+
+<body>
+<div class = "container">
+    <header class="header clearfix">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="/">Dstagram</a>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a href="/" class = "activa nav-link ">Home</a>
+                </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Welcom, {{user.get_username}}</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'photo:photo_upload' %}" class="nav-link">Upload</a>
+                </li>
+                <li class="nav-item"><a href="#" class="nav-link">Logout</a></li>
+                {% else %}
+                <li class="nav-item"><a href="#" class="nav-link">Login</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Signup</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    {% block content %}
+    {% endblock %}
+
+    <footer class="footer">
+        <p>&copy; Powered By Django 3</p>
+    </footer>
+</div>
+</body>
+</html>
+```
+
+
+
+- 부트스트랩 적용.
+- 메뉴바 만들어서 상단에 배치
+- 중간에는 내용을 출력하도록 content block을 만듦.
+- 최하단에는 푸터
+- 메뉴바는 로그인 한 상태와 로그아웃 한 상태에 따라 다르게 보이도록 만들었음.
+- 모든 페이지에서 user 객체를 사용할 수 있음. : 이때 is_authenticated 값을 이용해 로그인 여부를 판단할 수 있음.
+- base.html을 추가했으니 템플릿이 검색되도록 settings.py에 경로 추가.
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/config/urls.py
+"""config URL Configuration
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/1.11/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.conf.urls import url, include
+    2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
+"""
+from django.conf.urls import url
+from django.contrib import admin
+from django.urls import path,include
+urlpatterns = [
+    path('admin/',admin.site.urls),
+    path('',include('photo.urls')),
+]
+
+```
+
+
+
+![image](https://user-images.githubusercontent.com/49121293/160754542-c2d50db6-510e-49ce-b2c8-8425057c1260.png)
+
+
+
+
+- TEMPLATES 변수에 있는 DIRS 키의 값을 추가함.
+
+```python
+# /home/saesimcheon/workspace/dstagram/config/settings.py
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR,"templates")], # 이 부분 수정.
+        'APP_DIRS': True, 
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+```
+
+
+- /home/saesimcheon/workspace/dstagram/templates/base.html 
+```html
+{% extends 'base.html' %}
+
+{% block title %}- LIST{% endblock %}
+
+{% block content %}
+    {% for post in photos %}
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8 panel panel-default">
+                <p><img src="{{post.photo.url}}" style = "width:100%;"></p>
+                <button type="button" class="btn btn-xs btn-info">
+                    {{post.author.username}}
+                </button>
+                <p>{{post.text|linebreaksbr}}</p>
+                <p class="text-right">
+                    <a href="{% url 'photo:photo_detail' pk=post.id %}" class="btn btn-xs btn-success">댓글달기</a>
+                </p>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+    {% endfor %}
+{% endblock %}
+```
