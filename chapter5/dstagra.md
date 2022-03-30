@@ -551,3 +551,32 @@ TEMPLATES = [
     {% endfor %}
 {% endblock %}
 ```
+
+##### 업로드 뷰의 템플릿 작성
+- /home/saesimcheon/workspace/dstagram/photo/templates/photo/upload.html
+```html
+
+{% extends 'base.html' %}
+{% block title %}- Upload{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 panel panel-default">
+        <form action="" method ="post" enctype="multipart/form-data">
+            {{form.as_p}}
+            {% csrf_token %}
+            <input type="submit" class="btn btn-primary" value="Upload">
+        </form>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endblock %}
+```
+
+- 업로드 뷰는 form 태그를 사용해 구성.
+- form 태그의 enctype을 잘 보기. form 태그로 작성한 정보를 어떤 형태로 인코딩 해서 서버로 전달할지에 대한 옵션.
+- mehtod가 post일때만 사용 가능.
+
+- 사용할 수 있는 옵션 목록 
+    - application/x-www-from-urlencoded : 기본 옵션. 모든 문자열을 인코딩해 전달하며 특수문자는 ASCII HEX 값으로 변
