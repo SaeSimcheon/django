@@ -641,4 +641,54 @@ urlpatterns += static(settings.MEDIA_URL,document_root =settings.MEDIA_ROOT)
 
 
 - static을 사용해서 MEDIA_URL에 해당하는 주소를 가진 요청에 대해서는 MEDIA_ROOT에서 찾아서 응답하도록 urlspatterns에 추가하는 구문. 이 구문은 디버그 모드가 True일 때만 동작함.
-- 코드가 정상적으로 동작하면 
+
+
+##### 나머지 템플릿들도 완성
+
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/photo/templates/photo/update.html
+{% extends 'base.html' %}
+{% block title %}- Update{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 panel panel-default">
+        <form action="" method ="post" enctype="multipart/form-data">
+            {{form.as_p}}
+            {% csrf_token %}
+            <input type="submit" class="btn btn-primary" value="Update">
+        </form>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endblock %}
+
+```
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/photo/templates/photo/delete.html
+{% extends 'base.html' %}
+{% block title %}- Update{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 panel panel-default">
+        <div class="alert alert-info">
+            Do you want to delete {{object}}?
+        </div>
+        <form action="" method="post">
+            {{form.as_p}}
+            {% csrf_token %}
+            <input type="submit" class="btn btn-primary" value="Confirm">
+        </form>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endblock %}
+```
+
