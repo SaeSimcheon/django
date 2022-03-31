@@ -836,3 +836,182 @@ urlpatterns += static(settings.MEDIA_URL,document_root =settings.MEDIA_ROOT)
 
 LOGIN_REDIRECT_URL = '/'
 ```
+
+
+
+##### 회원가입 기능 만들기
+
+- 뷰와 폼 만들어야함.
+
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/accounts/forms.py
+from django.contrib.auth.models import User
+from django import forms
+
+class RegisterForm(forms.ModleForm):
+    password = forms.CharField(label = "Password",widget=forms.PasswordInput)
+    password2 = forms.CharField(label = "Repeat Password",widget=forms.PasswordInput)
+
+
+    class Meta :
+        model =User
+        fields = ['username','first_name','last_name','email']
+
+    def clean_password2(self):
+        cd = self.cleaned_data
+        if cd['password'] != cd['password2']:
+            raise forms.ValidationError('passwords not matched')
+        return cd['password2']
+```
+
+
+- 회원 가입 양식을 출력하기 위해서 RegisterForm이라는 클래스를 만듦.
+    - 이 클래스는 forms.ModelForm을 상속 받는데 모델이 있고 그에 대한 자료를 입력받고 싶은 경우 사용.
+    - 폼 클래스 내부에 있는 Meta class를 이용하면 기존에 있는 모델의 입력 폼을 쉽게 만들 수 있음.
+    - model을 설정하고 fields를 이용해서 입력 받을 필드를 지정하면 됨.
+    - password2를 만들어서 비밀번호 재입력 기능을 구현하도록 했음.
+    - clean_password2는 clean_필드명 형태의 메서드.
+    - 각 필드의 clean 메서드 호출된 후에 호출되는 메서드들.
+    - 유효성 검사나 조작을 하고 싶은 경우 사용.
+    - clean_필드명 형태의 메서드에서 해당 필드의 값을 사용할 때는 clean_data에서 필드 값을 찾아서 써야한다고 함. 이 값이 이전 단계까지 유효성 검사를 마친 상태이기 때문.
+
+
+
+
+- 완성한 폼을 사용해서 뷰를 만들어보자.
+
+
+```python
+from django.shortcuts import render
+from .forms import RegisterForm
+# Create your views here.
+
+
+def register(request):
+    if request.method =="POST":
+        user_form = RegisterForm(request.POST)
+        if user_form.is_valid():
+            new_user = user_form.save(commit=False)
+            new_user.set_password(user_form.cleand_data['password'])
+            new_user.save()
+            return render(request , 'registration/register_done.hmtl',{'new_user':new_user})
+        
+        else:
+            user_form = RegisterForm()
+        
+        return render(request,'registration/register.html',{"form":user_form})
+
+
+
+```
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/accounts/views.py
+
+from django.shortcuts import render
+from .forms import RegisterForm
+
+def register(request):
+    if request.method =="POST":
+        user_form = RegisterForm(request.POST)
+        if user_form.is_valid():
+            new_user = user_form.save(commit=False)
+            new_user.set_password(user_form.cleaned_data['password'])
+            new_user.save()
+            return render(request , 'registration/register_done.html',{'new_user':new_user})
+        
+    else:
+        user_form = RegisterForm()
+        
+    return render(request,'registration/register.html',{"form":user_form})
+
+
+```
+
+
+- 이 뷰에서 기존의 제네릭 뷰에서 어떤 식으로 처리를 하는지 알아볼 수 있는 힌트가 있음.
+    - if request.method=="POST" 라는 부분은 회원가입 정보가 서버로 전달 되었다는 으미.
+    - 입력을 받는 템플릿들을 보면 form 태그에 method가 post로 설정되어 있는 것을 자주 보았음.
+    - post는 http 메서드들 중 하나로 서버로 자료를 전달할 대 사용하는 메서드. 따라서 post 방식으로 뷰를 호출했다는 것은 서버로 자료를 전달하는 상태.
+    - 그래서 정보를 전달 받으면 registerform을 이용해서 유효성 검사 후 저장.
+    - 저장하는 절차는 두 단계를 거침. 우선 user_form.save 메서드를 통해서 폼 객체에 지정된 모델을 확인하고 이 모델의 객체를 만듦.
+    - 이 때 옵션으로 commit=False로 지정했기 때문에 데이터 베이스에 저장하는 것이 아니라, 메모리 상에 객체만 만들어짐.
+    - 그리고 set_password 메서드를 사용해 비밀번호를 지정.
+    - 이런 과정을 거쳐야 비밀ㅂ번호가 암호화된 상태로 저장됨.
+    - 비밀번호까지 지정했다면 new_user의 save 메서드를 호출해 실제로 데이터베이스에 저장함. 
+    - 회원가입이 완료 되었으므로 register_done이라는 템플릿을 보여줌.
+    - 반대로 post가 아니라면 입력을 받는 페이지를 보여줌. 그래서 비어있는 registerform 객체를 만들고 register 템플릿을 렌더링해서 보여줌.
+
+이 뷰를 사용하기 위해 URL 연결하기
+
+
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/accounts/urls.py
+from django.urls import path
+from django.contrib.auth import views as auth_view
+from .views import register
+urlpatterns = [
+    path('login/',auth_view.LoginView.as_view(),name='login'),
+    path('logout/',auth_view.LogoutView.as_view(template_name='registration/logout.html'),name='logout'),
+    path('register/',register,name='register'),
+]
+
+```
+- /home/saesimcheon/workspace/dstagram/accounts/templates/registration/register.html
+```html
+{% extends 'base.html' %}
+
+{% block title %}- Registration {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 panel panel-default">
+        <div class="alert alert-info">Please enter your account information.
+        </div>
+        <form action="" method="post">
+            {{form.as_p}}
+            {% csrf_token %}
+            <input class="btn btn-primary" type="submit" value="Register">
+        </form>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endblock %}
+
+```
+
+
+- /home/saesimcheon/workspace/dstagram/accounts/templates/registration/register_done.html
+
+```html
+{% extends 'base.html' %}
+
+{% block title %}- Registration Done{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 panel panel-default">
+        <div class="alert alert-info">Registration Success. Welcome, {{new_user.username}}
+        </div>
+        <a class="btn btn-info" href="/">Move to main</a>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endblock %}
+```
+
+
+- base.html에 회원 가입 링크 연결.
+
+
+- /home/saesimcheon/workspace/dstagram/templates/base.html
+```html
+<li class="nav-item"><a href="{% url 'register' %}" class="nav-link">Signup</a></li>
+```
