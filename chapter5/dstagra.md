@@ -692,3 +692,118 @@ urlpatterns += static(settings.MEDIA_URL,document_root =settings.MEDIA_ROOT)
 {% endblock %}
 ```
 
+### Accounts 앱 만들기
+
+
+#### accoutns 앱 만들기
+
+##### 앱 생성
+```console
+python3 manage.py startapp accounts
+```
+
+
+##### settings.py에 앱 추가하기
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/config/settings.py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'photo',
+    'accounts',
+]
+```
+
+
+##### 로그인, 로그아웃 기능 추가
+- 로그인, 로그아웃 기능은 장고에 이미 만들어져있는 기능.
+- 이 기능을 그대로 불러다 쓰기 위해서 accounts 앱 폴더에 urls.py를 만들고 있는 뷰를 불러다가 씀.
+- 
+```python
+# /home/saesimcheon/workspace/dstagram/accounts/urls.py
+from django.urls import path
+from django.contrib.auth import views as auth_view
+
+urlpatterns = [
+    path('login/',auth_view.LoginView.as_view(),name='login'),
+    path('logout/',auth_view.LogoutView.as_view(template_name='registration/logout.html'),name='logout'),
+]
+```
+
+
+- urls.py를 사용하기 위하여 루트 urls.py에 연결.
+
+```python
+# /home/saesimcheon/workspace/dstagram/config/urls.py
+from django.conf.urls import url
+from django.contrib import admin
+from django.urls import path,include
+
+from django.conf.urls.static import static
+from django.conf import settings
+
+urlpatterns = [
+    path('admin/',admin.site.urls),
+    path('',include('photo.urls')),
+    path('accounts/',include('photo.urls')),
+]
+
+urlpatterns += static(settings.MEDIA_URL,document_root =settings.MEDIA_ROOT)
+
+```
+
+
+- 템플릿 만들기
+
+- /home/saesimcheon/workspace/dstagram/accounts/templates/registration/login.html
+```html
+
+{% extends 'base.html' %}
+{% block title %}-Login{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 panel panel-default">
+        <div class="alert alert-info">Please enter your login information</div>
+        <form action="" method="post">
+            {{form.as_p}}
+            {% csrf_token %}
+            <input class="btn btn-primary" type="submit" value="Login">
+        </form>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endblock %}
+```
+
+
+
+
+- /home/saesimcheon/workspace/dstagram/accounts/templates/registration/logout.html
+```html
+
+{% extends 'base.html' %}
+{% block title %}-Logout{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 panel panel-default">
+        <div class="alert alert-info">You have been successfully logged out. </div>
+        <a class="btn btn-primary" href="{% url 'login' %}">Click to Login</a>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endblock %}
+```
+
+
+- 두 템플릿을 메인메뉴에 있는 링크와 연결해주기. 
+- base.html에서 login,logout 링
