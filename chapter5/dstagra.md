@@ -1015,3 +1015,60 @@ urlpatterns = [
 ```html
 <li class="nav-item"><a href="{% url 'register' %}" class="nav-link">Signup</a></li>
 ```
+
+
+##### 권한 제어
+
+- 로그인한 사용자만 서비스 이용할 수 있도록 제어하기
+- 데코레이터(함수형)와 믹스인()을 사용.
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/photo/views.py
+from re import template
+from django.shortcuts import render
+from .models import Photo
+from django.views.generic.edit import CreateView,DeleteView,UpdateView
+# Create your views here.
+from django.shortcuts import redirect
+
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+
+
+
+
+
+@login_required
+def photo_list(request):
+    photos = Photo.objects.all()
+    return render(request,'photo/list.html',{'photos':photos})
+
+class PhotoUploadView(LoginRequiredMixin,CreateView):
+    model = Photo
+    fields = ["photo",'text']
+    template_name = 'photo/upload.html'
+
+    def form_valid(self,form):
+        form.instance.author_id = self.request.user.id
+
+        if form.is_valid():
+            form.instance.save()
+            return redirect('/')
+        else:
+            return self.render_to_response({'form':form})
+
+class PhotoDeleteView(LoginRequiredMixin,DeleteView):
+    model = Photo
+    success_url = '/'
+    template_name = 'photo/delete.html'
+
+class PhotoUpdateView(LoginRequiredMixin,UpdateView):
+    model = Photo
+    fields = ["photo",'text']
+    template_name = 'photo/update.html'
+
+
+```
