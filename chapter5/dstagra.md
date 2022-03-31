@@ -807,3 +807,32 @@ urlpatterns += static(settings.MEDIA_URL,document_root =settings.MEDIA_ROOT)
 
 - 두 템플릿을 메인메뉴에 있는 링크와 연결해주기. 
 - base.html에서 login,logout 링
+
+- /home/saesimcheon/workspace/dstagram/templates/base.html
+- href 속성 수정.
+```html
+
+<li class="nav-item"><a href="{% url 'logout' %}" class="nav-link">Logout</a></li>
+                {% else %}
+                <li class="nav-item"><a href="{% url 'login' %}" class="nav-link">Login</a></li>
+```
+
+
+![image](https://user-images.githubusercontent.com/49121293/160962320-238f33cb-0015-475c-ad00-620741156e25.png)
+
+
+
+![image](https://user-images.githubusercontent.com/49121293/160962400-87030eb4-974f-4218-b2a7-d4bf12740f5a.png)
+
+
+- 이런 식으로 로그인은 되지만 프로파일이라는 페이지가 없어서 오류가 발생함.
+- 로그인 후 이동할 페이지 설정의 기본 값이 profile이기 대문임. 바로 메인 페이지로 이동하도록 변경해보자.
+- settings.py의 LOGIN_REDIRECT_URL 변수 추가.
+
+
+
+```python
+# /home/saesimcheon/workspace/dstagram/config/settings.py
+
+LOGIN_REDIRECT_URL = '/'
+```
