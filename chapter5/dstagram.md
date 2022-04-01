@@ -1072,3 +1072,17 @@ class PhotoUpdateView(LoginRequiredMixin,UpdateView):
 
 
 ```
+
+
+
+#### S3 설정관련.
+
+- policy를 직접 설정해주어야했었음.
+    - IAM에서 정책 설정하여 arn을 받아야함.
+    - S3 bucket 권한 설정에서 전체 접근 유저에 대해서 read권한만 주고, 
+
+![image](https://user-images.githubusercontent.com/49121293/161175481-4f2723a6-0397-4f1c-8fef-8c78d6750458.png)
+
+
+[참고](https://ssungkang.tistory.com/entry/Django-AWS-S3%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-%EC%9D%B4%EB%AF%B8%EC%A7%80-%EC%97%85%EB%A1%9C%EB%93%9C)
+[](https://ssungkang.tistory.com/entry/Django-Logging-%EC%84%A4%EC%A0%95-%EB%B0%8F-SQL-%EC%BF%BC%EB%A6%AC-%ED%99%95%EC%9D%B8?category=320582)
