@@ -1085,4 +1085,4 @@ class PhotoUpdateView(LoginRequiredMixin,UpdateView):
 
 
 [참고](https://ssungkang.tistory.com/entry/Django-AWS-S3%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-%EC%9D%B4%EB%AF%B8%EC%A7%80-%EC%97%85%EB%A1%9C%EB%93%9C)
-[](https://ssungkang.tistory.com/entry/Django-Logging-%EC%84%A4%EC%A0%95-%EB%B0%8F-SQL-%EC%BF%BC%EB%A6%AC-%ED%99%95%EC%9D%B8?category=320582)
+[장고](https://ssungkang.tistory.com/entry/Django-Logging-%EC%84%A4%EC%A0%95-%EB%B0%8F-SQL-%EC%BF%BC%EB%A6%AC-%ED%99%95%EC%9D%B8?category=320582)
