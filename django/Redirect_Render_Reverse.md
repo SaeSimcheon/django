@@ -1,6 +1,6 @@
 # 모두 shorcut function
 
-# Reverse
+# Reverse : URL 생성
 - URL template tag와 비슷한 것을 사용하고 싶을때 사용한다 ?
 - reverse(viewname,urlconf,args,kwargs)
 - viewname은 URL pattern name 또는 callable view object
@@ -9,7 +9,7 @@
 - [stackoverflow](https://stackoverflow.com/questions/11241668/what-is-reverse)
 
 
-# Redirect
+# Redirect : 특정 지점으로 이동
 - httpresponseredict를 적절한 url에 return한다.
 - 지정된 URL로 이동.
 - 성공적으로 post data를 다룬 후에는 redirect 해야한다 ?
@@ -19,7 +19,7 @@ As the Python comment above points out, you should always return an HttpResponse
 
 
 
-# Render
+# Render : 결과 텍스트 반환
 - 주어진 템플릿과 context를 묶어 HttpResponse 객체를 return한다.
 
 
