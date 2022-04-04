@@ -7,6 +7,8 @@
 - 주어진 source에 대한 적절한 URL을 찾는 것이 목표 ?
 - 하드 코드 하는 것보다 수월하게 미래에 수정가능.
 - [stackoverflow](https://stackoverflow.com/questions/11241668/what-is-reverse)
+
+
 # Redirect
 - httpresponseredict를 적절한 url에 return한다.
 - 지정된 URL로 이동.
